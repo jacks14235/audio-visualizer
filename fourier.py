@@ -6,8 +6,9 @@ import time
 
 LO = 40
 HI = 21000
-NUM_BUCKETS = 12
-buckets = [LO * (HI / LO) ** (i / NUM_BUCKETS) for i in range(NUM_BUCKETS)]
+NUM_BUCKETS = 10
+# buckets = [LO * (HI / LO) ** (i / NUM_BUCKETS) for i in range(NUM_BUCKETS)]
+buckets = [40,80,160,320,640,1280,2560,5120,10240,20480]
 print(buckets)
 
 class TestReader:
@@ -54,12 +55,11 @@ class TestReader:
 			if (bucket+ 1 == len(buckets)):
 				break
 			if (xf[i] > buckets[bucket + 1]):
-				if (i - start < 2):
-					# print("no data for bucket", bucket)
+				if (i - start < 1):
 					avgs[bucket] = avgs[bucket - 1]
 					bucket += 1
 				else:
-					avgs[bucket] = np.abs(np.average(yf[start:i-1]))
+					avgs[bucket] = np.abs(np.average(yf[start:i]))
 					start = i
 					bucket += 1
 
@@ -85,10 +85,11 @@ if __name__ == '__main__':
 
 
 	xf, yf = reader.getNextVals()
-	power_spectrum = np.abs(xf)**2 / (1024)
-	normalized_spectrum = power_spectrum / np.sum(power_spectrum)
+	plt.plot([i for i in range(len(xf))])
+	# power_spectrum = np.abs(xf)**2 / (1024)
+	# normalized_spectrum = power_spectrum / np.sum(power_spectrum)
 
-	plt.bar(yf[:1024//2], normalized_spectrum[:(1024)//2])
-	plt.xlabel('Frequency (Hz)')
-	plt.ylabel('Normalized Amplitude')
-	plt.show()
+	# plt.bar(yf[:1024//2], normalized_spectrum[:(1024)//2])
+	# plt.xlabel('Frequency (Hz)')
+	# plt.ylabel('Normalized Amplitude')
+	# plt.show()
