@@ -2,7 +2,7 @@ import numpy as np
 import pygame
 import time
 
-DOT_RADIUS = 2
+DOT_RADIUS = 8
 
 class DotArray:
 	def __init__(self, w, h, res=(512,512)):
@@ -10,6 +10,7 @@ class DotArray:
 		self.h = h
 		self.res = res
 		self.array = np.zeros(res[0]*res[1])
+		self.count = 0
 
 		# find coordinates contained in each dot
 		dots = np.zeros((w*h, DOT_RADIUS * DOT_RADIUS * 4), dtype=np.int32)
@@ -35,27 +36,34 @@ class DotArray:
 	
 	# takes array of shape (w*h, 3)
 	def update(self, colors):
+		# pygame.event.pump()
 		self.game_events()
+
+		colors = colors.reshape(self.w, self.h, 3)
+		colors = np.rot90(colors, k=-1, axes=[0,1])
+		colors = colors.reshape(self.w * self.h, 3)
 		image = np.zeros((self.res[0]*self.res[1], 3), dtype=np.uint8)
-		# image.fill(255)
 		image[self.dots, :] = colors[:, np.newaxis, :]
 		surface = pygame.surfarray.make_surface(image.reshape(self.res[0], self.res[1], 3))
 		self.screen.blit(surface, (0,0))
 		pygame.display.update()
-		time.sleep(1/60)
+		# print('updated', self.count)
+		self.count += 1
 
 	def game_events(self):
-		for event in pygame.event.get():
+		events = pygame.event.get()
+		for event in events:
 			if event.type == pygame.QUIT:
-				game_running = False
-
-d = DotArray(48, 48)
+				raise RuntimeError("QUIT EVENT")
 
 
-activated = np.zeros((48 * 48,3), dtype=np.int8)
-activated.fill(255)
-print(activated.shape)
-for i in range(1):
-	d.update(activated)
+if __name__ == '__main__':
+	d = DotArray(10, 10)
 
-time.sleep(10)
+	activated = np.zeros((10 * 10,3), dtype=np.int8)
+	activated.fill(255)
+	print(activated.shape)
+	for i in range(1):
+		d.update(activated)
+
+	time.sleep(10)
