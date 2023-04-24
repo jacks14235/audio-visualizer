@@ -3,8 +3,8 @@ import numpy as np
 from gradient import Gradient
 import pyaudiowpatch as pyaudio
 import time
-from dot_array import DotArray
 import sys
+import pickle
 
 CHUNK = 1024
 dCHANNELS = 1
@@ -12,14 +12,19 @@ RATE = 44100
 RECORD_SECONDS = 10000
 WAVE_OUTPUT_FILENAME = "output.wav"
 DEPTH = 16
-buckets = [40,80,160,320,640,1280,2560,5120,10240,20480]
-N_BUCKETS = 10
-BUCKET_HEIGHT = 10
+# buckets = [40,80,160,320,640,1280,2560,5120,10240,20480]
+f_min = 40
+f_max = 20480
+N_BUCKETS = 11
+BUCKET_HEIGHT = 11
+log_scale = (f_max / f_min)**(1/(N_BUCKETS - 1))
+buckets = [f_min * log_scale**i for i in range(N_BUCKETS)]
+print(buckets)
 
 running_len = 10
 running = np.zeros((running_len, len(buckets)))
 curr = 0
-weights = 2**np.array([i for i in range(len(buckets))])
+weights = .005 * log_scale**np.array([i for i in range(len(buckets))])
 
 frames = []
 
@@ -35,7 +40,6 @@ def callback(raw_data, frame_count, time_info, status):
 	global curr
 	frames.append(raw_data)
 	data = np.frombuffer(raw_data, dtype=np.int16) / (2**(DEPTH - 1))
-
 	# get fourier data
 	yf = fft(data)
 	xf = fftfreq(CHUNK, 1 / RATE)
@@ -58,7 +62,7 @@ def callback(raw_data, frame_count, time_info, status):
 				bucket += 1
 
 	# scale fourier data and add to running average
-	current_vals = (.007 * avgs) * weights
+	current_vals = avgs * weights
 	running[curr % running_len] = current_vals
 	curr += 1
   
@@ -72,8 +76,9 @@ def callback(raw_data, frame_count, time_info, status):
 		for j in range(maxH, BUCKET_HEIGHT):
 			pixels[j][i].fill(0)
 	pixels = pixels.reshape((N_BUCKETS*BUCKET_HEIGHT, 3))
-	# dots.update(pixels)
-	np.save(sys.stdout.buffer, pixels)
+	pickle.dump(pixels, sys.stdout.buffer)
+	sys.stdout.buffer.flush()
+
 	in_progress = False
 	return (raw_data, pyaudio.paContinue)
 	
@@ -109,17 +114,17 @@ with pyaudio.PyAudio() as p:
 				exit()
 				
 		print(f"Recording from: ({default_speakers['index']}){default_speakers['name']}")
-        
-        # wave_file = wave.open(filename, 'wb')
-        # wave_file.setnchannels(default_speakers["maxInputChannels"])
-        # wave_file.setsampwidth(pyaudio.get_sample_size(pyaudio.paInt16))
-        # wave_file.setframerate(int(default_speakers["defaultSampleRate"]))
-        
-        # def callback(in_data, frame_count, time_info, status):
-        #     """Write frames and return PA flag"""
-        #     wave_file.writeframes(in_data)
-        #     return (in_data, pyaudio.paContinue)
-        
+				
+				# wave_file = wave.open(filename, 'wb')
+				# wave_file.setnchannels(default_speakers["maxInputChannels"])
+				# wave_file.setsampwidth(pyaudio.get_sample_size(pyaudio.paInt16))
+				# wave_file.setframerate(int(default_speakers["defaultSampleRate"]))
+				
+				# def callback(in_data, frame_count, time_info, status):
+				#     """Write frames and return PA flag"""
+				#     wave_file.writeframes(in_data)
+				#     return (in_data, pyaudio.paContinue)
+				
 		with p.open(format=pyaudio.paInt16,
 				channels=default_speakers["maxInputChannels"],
 				rate=int(default_speakers["defaultSampleRate"]),
