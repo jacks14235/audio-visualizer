@@ -7,7 +7,7 @@ import sys
 import socket
 import pickle
 
-HOST = '10.9.216.187'
+HOST = '10.8.66.33'
 PORT = 7777
 
 CHUNK = 1024
@@ -21,19 +21,24 @@ f_min = 40
 f_max = 20480
 N_BUCKETS = 11
 BUCKET_HEIGHT = 11
-log_scale = (f_max / f_min)**(1/(N_BUCKETS - 1))
-buckets = [f_min * log_scale**i for i in range(N_BUCKETS)]
+log_scale = (f_max / f_min)**(1/(N_BUCKETS))
+buckets = [f_min * log_scale**i for i in range(N_BUCKETS + 1)]
 print(buckets)
+
 
 running_len = 10
 running = np.zeros((running_len, len(buckets)))
 curr = 0
-weights = .005 * log_scale**np.array([i for i in range(len(buckets))])
+weights = .008 * log_scale**np.array([i for i in range(len(buckets))])
 
 frames = []
 
-# dots = DotArray(N_BUCKETS, BUCKET_HEIGHT)
-grad = Gradient.rainbow()
+bg_grad = Gradient.heat2()
+get_background = lambda x, y, t, v: bg_grad.eval(y)
+fg_grad = Gradient.cool()
+get_foreground = lambda x, y, t, v: fg_grad.eval(v)
+
+
 in_progress = False
 def callback(raw_data, frame_count, time_info, status):
 	global in_progress
@@ -69,19 +74,29 @@ def callback(raw_data, frame_count, time_info, status):
 	current_vals = avgs * weights
 	running[curr % running_len] = current_vals
 	curr += 1
-  
+	pixels = np.zeros((N_BUCKETS, BUCKET_HEIGHT, 3), dtype=np.uint8)
 	running_avg = np.average(running, axis=0)
-	# convert values to colors
-	colors = np.array([grad.eval(val) for val in running_avg], dtype=np.uint8)
-	# stretch to height of pixels and reshape
-	pixels = np.repeat([colors], [BUCKET_HEIGHT], axis=0)
-	for i in range(N_BUCKETS):
-		maxH = int(BUCKET_HEIGHT * running_avg[i])
-		for j in range(maxH, BUCKET_HEIGHT):
-			pixels[j][i].fill(0)
-	pixels = pixels.reshape((N_BUCKETS*BUCKET_HEIGHT, 3))
-	# np.save(sys.stdout.buffer, pixels)
-	
+	old_way = False
+	if (old_way):
+		# convert values to colors
+		colors = np.array([get_foreground(0, 0, curr, val) for val in running_avg], dtype=np.uint8)
+		# stretch to height of pixels and reshape
+		pixels = np.repeat([colors], [BUCKET_HEIGHT], axis=0)
+		for i in range(N_BUCKETS):
+			maxH = int(BUCKET_HEIGHT * running_avg[i])
+			for j in range(maxH, BUCKET_HEIGHT):
+				pixels[j, i] = get_background(i, j, curr, 0)
+	else:
+		for x in range(N_BUCKETS):
+			val = running_avg[x]
+			for y in range(BUCKET_HEIGHT):
+				if val > y / BUCKET_HEIGHT:
+					pixels[x, y] = get_foreground(x / N_BUCKETS, y / BUCKET_HEIGHT, curr, val)
+				else:
+					pixels[x, y] = get_background(x / N_BUCKETS, y / BUCKET_HEIGHT, curr, val)
+	pixels = np.flip(pixels, axis=1)
+	# get pixels into row-major order from upper left
+	pixels = pixels.reshape((N_BUCKETS*BUCKET_HEIGHT, 3), order='F')
 	# changed
 	# pixels = np.array([grad.eval(i) for i in running_avg], dtype=np.uint8)
 	out_flo = sock.makefile(mode='wb')

@@ -13,20 +13,20 @@ class DotArray:
 		self.count = 0
 
 		# find coordinates contained in each dot
-		dots = np.zeros((w*h, DOT_RADIUS * DOT_RADIUS * 4), dtype=np.int32)
-		spacing_x = (res[0] - DOT_RADIUS * 2 * w) / (w + 1)
-		spacing_y = (res[1] - DOT_RADIUS * 2 * h) / (h + 1)
+		dots = np.zeros((h*w, DOT_RADIUS * DOT_RADIUS * 4), dtype=np.int32)
+		spacing_x = (res[0] - DOT_RADIUS * 2 * h) / (h + 1)
+		spacing_y = (res[1] - DOT_RADIUS * 2 * w) / (w + 1)
 		if spacing_x < 0:
 			raise ValueError("Not enough spacing on x-axis")
 		if spacing_y < 0:
 			raise ValueError("Not enough spacing on y-axis")
-		for y in range(h):
-			for x in range(w):
+		for y in range(w):
+			for x in range(h):
 				left = int((x + 1) * spacing_x + 2 * x * DOT_RADIUS)
 				top = int((y + 1) * spacing_y + 2 * y * DOT_RADIUS)
 				for j in range(DOT_RADIUS * 2):
 					for i in range(DOT_RADIUS * 2):
-						dots[x + y * w][i + j * DOT_RADIUS * 2] = res[0] * (top + j) + left + i
+						dots[x + y * h][i + j * DOT_RADIUS * 2] = res[0] * (top + j) + left + i
 		self.dots = dots
 
 		# initialize pygame stuff
@@ -38,10 +38,10 @@ class DotArray:
 	def update(self, colors):
 		# pygame.event.pump()
 		self.game_events()
+		
+		# put into column-major order
+		colors = colors.reshape((self.w, self.h, 3)).reshape((self.w * self.h, 3), order='F')
 
-		colors = colors.reshape(self.w, self.h, 3)
-		colors = np.rot90(colors, k=-1, axes=[0,1])
-		colors = colors.reshape(self.w * self.h, 3)
 		image = np.zeros((self.res[0]*self.res[1], 3), dtype=np.uint8)
 		image[self.dots, :] = colors[:, np.newaxis, :]
 		surface = pygame.surfarray.make_surface(image.reshape(self.res[0], self.res[1], 3))

@@ -16,11 +16,3 @@ while True:
   except pickle.UnpicklingError as p:
     print("ERROR:", p)
   array.update(arr)
-
-# activated = np.zeros((10 * 10,3), dtype=np.int8)
-# activated.fill(255)
-# print(activated.shape)
-# for i in range(1):
-#   array.update(activated)
-
-# time.sleep(10)

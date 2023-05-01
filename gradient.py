@@ -29,10 +29,31 @@ class Gradient:
             print('Error', start, end, rat)
         return color
     
+    def reverse(self):
+        self.colors = [self.colors[-i] for i in range(1, len(self.colors) + 1)]
+        self.stops = [(1 - self.stops[-i]) for i in range(1, len(self.stops) + 1)]
+        return self
+    
     def heat():
         return Gradient([
             [255,0,0],
             [255,255,0]
+        ])
+
+    def heat2():
+        return Gradient([
+            [255,0,0],
+            [255,127,0],
+            [255,255,0]
+        ], [
+            .66
+        ])
+    
+    def cool():
+        return Gradient([
+            [0,0,255],
+            [0,255,255],
+            [0,255,0]
         ])
     
     def temp():
@@ -53,6 +74,7 @@ class Gradient:
             [255,0,255],
             [255,0,0]
         ])
+    
 
 
 
