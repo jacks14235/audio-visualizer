@@ -9,10 +9,12 @@ import sys
 import pickle
 import time
 
-array = DotArray(11,11)
+array = DotArray(29,29, upscale_factor=1)
 while True:
   try:
     arr = pickle.load(sys.stdin.buffer)
+    array.update(arr)
   except pickle.UnpicklingError as p:
     print("ERROR:", p)
-  array.update(arr)
+  except OSError as e:
+    print("OSError", e)

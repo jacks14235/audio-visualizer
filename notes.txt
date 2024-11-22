@@ -1,3 +1,0 @@
-To run with fake dot array using pygame: python finaler.py | python buffer_read.py
-
-run python client.py on windows computer with server.py (not the one in this repo yet) on raspberry pickle

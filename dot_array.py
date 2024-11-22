@@ -2,10 +2,13 @@ import numpy as np
 import pygame
 import time
 
-DOT_RADIUS = 8
+DOT_RADIUS = 14
 
 class DotArray:
-	def __init__(self, w, h, res=(512,512)):
+	def __init__(self, w, h, res=(1024,1024), upscale_factor = 1):
+		self.upscale_factor = upscale_factor
+		h *= self.upscale_factor
+		w *= self.upscale_factor
 		self.w = w
 		self.h = h
 		self.res = res
@@ -38,9 +41,14 @@ class DotArray:
 	def update(self, colors):
 		# pygame.event.pump()
 		self.game_events()
-		
+
 		# put into column-major order
-		colors = colors.reshape((self.w, self.h, 3)).reshape((self.w * self.h, 3), order='F')
+		colors = colors.reshape((self.w // self.upscale_factor, self.h // self.upscale_factor, 3))
+		# expand each entry into square of pixels
+		colors = np.repeat(colors, self.upscale_factor, axis=1)
+		colors = np.repeat(colors, self.upscale_factor, axis=0)
+		# finish column-major-order
+		colors = colors.reshape((self.w * self.h, 3), order='F')
 
 		image = np.zeros((self.res[0]*self.res[1], 3), dtype=np.uint8)
 		image[self.dots, :] = colors[:, np.newaxis, :]

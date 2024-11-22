@@ -1,4 +1,5 @@
 *.whl
 *.json
 test.*
-temp.*
+temp.*s
+notes.txt
